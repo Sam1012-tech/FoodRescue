@@ -88,62 +88,56 @@ export function OperationsMap({ isFullscreen }: OperationsMapProps) {
         />
         
         {/* NGOs */}
-        {data.ngos.map((ngo) => (
-          ngo.location?.latitude && (
-            <Marker 
-              key={ngo.id} 
-              position={[ngo.location.latitude, ngo.location.longitude]} 
-              icon={ngoIcon}
-            >
-              <Popup className="custom-popup">
-                <div className="p-1">
-                  <h3 className="font-bold text-sm mb-1">{ngo.name}</h3>
-                  <p className="text-[10px] text-muted-foreground uppercase">Capacity: {ngo.capacity} meals</p>
-                  <div className="mt-2 text-[10px] bg-green-50 text-green-700 px-2 py-0.5 rounded-full inline-block">NGO Partner</div>
-                </div>
-              </Popup>
-            </Marker>
-          )
+        {data.ngos.filter(n => n.location?.latitude && n.location?.longitude).map((ngo) => (
+          <Marker 
+            key={ngo.id} 
+            position={[ngo.location.latitude, ngo.location.longitude]} 
+            icon={ngoIcon}
+          >
+            <Popup className="custom-popup">
+              <div className="p-1">
+                <h3 className="font-bold text-sm mb-1">{ngo.name}</h3>
+                <p className="text-[10px] text-muted-foreground uppercase">Capacity: {ngo.capacity} meals</p>
+                <div className="mt-2 text-[10px] bg-green-50 text-green-700 px-2 py-0.5 rounded-full inline-block">NGO Partner</div>
+              </div>
+            </Popup>
+          </Marker>
         ))}
 
         {/* Volunteers */}
-        {data.volunteers.map((v) => (
-          v.current_location?.latitude && (
-            <Marker 
-              key={v.id} 
-              position={[v.current_location.latitude, v.current_location.longitude]} 
-              icon={volunteerIcon}
-            >
-              <Popup>
-                <div className="p-1">
-                  <h3 className="font-bold text-sm mb-1">{v.name}</h3>
-                  <p className="text-[10px] text-muted-foreground uppercase">Status: {v.status}</p>
-                </div>
-              </Popup>
-            </Marker>
-          )
+        {data.volunteers.filter(v => v.current_location?.latitude && v.current_location?.longitude).map((v) => (
+          <Marker 
+            key={v.id} 
+            position={[v.current_location.latitude, v.current_location.longitude]} 
+            icon={volunteerIcon}
+          >
+            <Popup>
+              <div className="p-1">
+                <h3 className="font-bold text-sm mb-1">{v.name}</h3>
+                <p className="text-[10px] text-muted-foreground uppercase">Status: {v.status}</p>
+              </div>
+            </Popup>
+          </Marker>
         ))}
 
         {/* Donations */}
-        {data.donations.map((d) => (
-          d.location?.latitude && (
-            <Marker 
-              key={d.id} 
-              position={[d.location.latitude, d.location.longitude]} 
-              icon={donorIcon}
-            >
-              <Popup>
-                <div className="p-1">
-                  <h3 className="font-bold text-sm mb-1">{d.food_type}</h3>
-                  <p className="text-primary font-black text-sm">{d.quantity} servings</p>
-                  <p className="text-[10px] text-muted-foreground mt-1">{d.location_name}</p>
-                  <div className="mt-2 text-[10px] bg-orange-50 text-orange-700 px-2 py-0.5 rounded-full inline-block uppercase font-bold">
-                    {d.status}
-                  </div>
+        {data.donations.filter(d => d.location?.latitude && d.location?.longitude).map((d) => (
+          <Marker 
+            key={d.id} 
+            position={[d.location.latitude, d.location.longitude]} 
+            icon={donorIcon}
+          >
+            <Popup>
+              <div className="p-1">
+                <h3 className="font-bold text-sm mb-1">{d.food_type}</h3>
+                <p className="text-primary font-black text-sm">{d.quantity} servings</p>
+                <p className="text-[10px] text-muted-foreground mt-1">{d.location_name}</p>
+                <div className="mt-2 text-[10px] bg-orange-50 text-orange-700 px-2 py-0.5 rounded-full inline-block uppercase font-bold">
+                  {d.status}
                 </div>
-              </Popup>
-            </Marker>
-          )
+              </div>
+            </Popup>
+          </Marker>
         ))}
 
       </MapContainer>
