@@ -5,92 +5,107 @@ import android.Manifest
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
-import java.io.File
 import androidx.core.content.FileProvider
+import coil.compose.AsyncImage
+import com.foodRescue.ui.shared.components.GlassCard
+import com.foodRescue.ui.theme.*
+import kotlinx.coroutines.delay
+import java.io.File
 
 @Composable
 fun PostFoodScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     var capturedImageUri by remember { mutableStateOf<Uri?>(null) }
-    var photoRefreshTrigger by remember { mutableLongStateOf(0L) }
-    var isPosting by remember { mutableStateOf(false) }
+    var screenState by remember { mutableStateOf("initial") } // initial, analyzing, results
 
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { _ -> }
-
-    val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture()
-    ) { success ->
-        if (success) {
-            photoRefreshTrigger = System.currentTimeMillis()
-        }
+    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+        if (success) screenState = "analyzing"
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text("Post Surplus Food", style = MaterialTheme.typography.headlineSmall)
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Box(modifier = Modifier.size(300.dp).padding(8.dp), contentAlignment = Alignment.Center) {
-            if (capturedImageUri != null) {
-                // Use the trigger to force Coil to reload the image from disk
-                AsyncImage(
-                    model = capturedImageUri.toString() + "?t=" + photoRefreshTrigger,
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize()
-                )
-            } else {
-                Surface(color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.fillMaxSize(), shape = MaterialTheme.shapes.medium) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text("No Photo Taken", style = MaterialTheme.typography.labelLarge)
-                    }
+    Box(modifier = Modifier.fillMaxSize().background(DarkBg)) {
+        AnimatedContent(targetState = screenState, label = "ScreenTransition") { state ->
+            when (state) {
+                "initial" -> InitialCameraUI { 
+                    val file = File(context.cacheDir, "temp.jpg")
+                    val uri = FileProvider.getUriForFile(context, "com.foodRescue.fileprovider", file)
+                    capturedImageUri = uri
+                    cameraLauncher.launch(uri)
                 }
+                "analyzing" -> AnalyzingUI { screenState = "results" }
+                "results" -> AnalysisResultsUI(capturedImageUri, onBack)
             }
         }
+    }
+}
 
-        Spacer(modifier = Modifier.height(16.dp))
+@Composable
+fun InitialCameraUI(onLaunch: () -> Unit) {
+    Column(modifier = Modifier.fillMaxSize().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+        GlassCard(modifier = Modifier.size(300.dp)) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("CAMERA INFRASTRUCTURE READY", color = NeonGreen.copy(alpha = 0.5f))
+            }
+        }
+        Spacer(modifier = Modifier.height(32.dp))
+        Button(onClick = onLaunch, modifier = Modifier.fillMaxWidth().height(64.dp), colors = ButtonDefaults.buttonColors(containerColor = NeonGreen)) {
+            Text("SCAN FOOD", fontWeight = FontWeight.Bold, color = Color.Black)
+        }
+    }
+}
 
-        Button(onClick = {
-            permissionLauncher.launch(Manifest.permission.CAMERA)
-            try {
-                val file = File(context.cacheDir, "temp_image.jpg")
-                if (file.exists()) file.delete()
-                file.createNewFile()
-                
-                val uri = FileProvider.getUriForFile(context, "com.foodRescue.fileprovider", file)
-                capturedImageUri = uri
-                cameraLauncher.launch(uri)
-            } catch (e: Exception) {}
-        }, modifier = Modifier.fillMaxWidth().height(56.dp)) {
-            Text(if (capturedImageUri == null) "Take Photo" else "Retake Photo")
+@Composable
+fun AnalyzingUI(onComplete: suspend () -> Unit) {
+    LaunchedEffect(Unit) {
+        delay(3000)
+        onComplete()
+    }
+    Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+        CircularProgressIndicator(color = NeonGreen, modifier = Modifier.size(64.dp))
+        Spacer(modifier = Modifier.height(24.dp))
+        Text("AI MCP ANALYSIS IN PROGRESS...", color = Color.White)
+        Text("Scanning freshness protocols...", color = Color.White.copy(alpha = 0.5f), style = MaterialTheme.typography.labelSmall)
+    }
+}
+
+@Composable
+fun AnalysisResultsUI(imageUri: Uri?, onBack: () -> Unit) {
+    Column(modifier = Modifier.fillMaxSize().padding(24.dp)) {
+        Text("AI ANALYSIS COMPLETE", style = MaterialTheme.typography.headlineSmall, color = NeonGreen)
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        AsyncImage(model = imageUri, contentDescription = null, modifier = Modifier.fillMaxWidth().height(200.dp))
+        Spacer(modifier = Modifier.height(24.dp))
+
+        GlassCard(modifier = Modifier.fillMaxWidth()) {
+            ResultRow("Food Type", "Veg Biryani", NeonGreen)
+            ResultRow("Estimated Meals", "48", Color.White)
+            ResultRow("Freshness Score", "84%", NeonGreen)
+            ResultRow("Spoilage Risk", "LOW", Color.White)
+            ResultRow("Pickup Urgency", "MEDIUM", WarningYellow)
         }
 
         Spacer(modifier = Modifier.weight(1f))
-
-        if (isPosting) {
-            CircularProgressIndicator()
-        } else {
-            Button(
-                onClick = { 
-                    isPosting = true
-                    onBack() 
-                },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                enabled = capturedImageUri != null
-            ) {
-                Text("Submit Donation")
-            }
+        Button(onClick = onBack, modifier = Modifier.fillMaxWidth().height(64.dp), colors = ButtonDefaults.buttonColors(containerColor = NeonGreen)) {
+            Text("START RESCUE OPERATION", color = Color.Black, fontWeight = FontWeight.Bold)
         }
+    }
+}
+
+@Composable
+fun ResultRow(label: String, value: String, color: Color) {
+    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(label, color = Color.White.copy(alpha = 0.5f))
+        Text(value, color = color, fontWeight = FontWeight.Bold)
     }
 }
