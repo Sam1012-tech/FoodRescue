@@ -1,11 +1,21 @@
 from fastapi import FastAPI, BackgroundTasks
-from app.agents.matching_agent import MatchingAgent
-from app.services.impact_service import ImpactService
-from app.services.escalation_service import EscalationService
-from app.core.firebase import db
+from fastapi.middleware.cors import CORSMiddleware
+from .agents.matching_agent import MatchingAgent
+from .services.impact_service import ImpactService
+from .services.escalation_service import EscalationService
+from .core.firebase import db
 from datetime import datetime
 
 app = FastAPI(title="RescueBite AI Operations Command Center")
+
+# CORS Configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://localhost:5174", "http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 matching_agent = MatchingAgent()
 

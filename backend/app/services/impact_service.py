@@ -1,4 +1,4 @@
-from app.core.firebase import db
+from ..core.firebase import db
 
 class ImpactService:
     @staticmethod
