@@ -20,16 +20,20 @@ import androidx.core.content.FileProvider
 fun PostFoodScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     var capturedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var photoRefreshTrigger by remember { mutableLongStateOf(0L) }
     var isPosting by remember { mutableStateOf(false) }
 
-    // PERMISSION LAUNCHER
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { _ -> }
 
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
-    ) { _ -> }
+    ) { success ->
+        if (success) {
+            photoRefreshTrigger = System.currentTimeMillis()
+        }
+    }
 
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -40,7 +44,12 @@ fun PostFoodScreen(onBack: () -> Unit) {
 
         Box(modifier = Modifier.size(300.dp).padding(8.dp), contentAlignment = Alignment.Center) {
             if (capturedImageUri != null) {
-                AsyncImage(model = capturedImageUri, contentDescription = null, modifier = Modifier.fillMaxSize())
+                // Use the trigger to force Coil to reload the image from disk
+                AsyncImage(
+                    model = capturedImageUri.toString() + "?t=" + photoRefreshTrigger,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize()
+                )
             } else {
                 Surface(color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.fillMaxSize(), shape = MaterialTheme.shapes.medium) {
                     Box(contentAlignment = Alignment.Center) {
@@ -53,22 +62,16 @@ fun PostFoodScreen(onBack: () -> Unit) {
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(onClick = {
-            // 1. Request Permission
             permissionLauncher.launch(Manifest.permission.CAMERA)
-
-            // 2. Prepare file
             try {
                 val file = File(context.cacheDir, "temp_image.jpg")
                 if (file.exists()) file.delete()
                 file.createNewFile()
                 
-                // 3. Launch Camera (using hardcoded authority to be safe)
                 val uri = FileProvider.getUriForFile(context, "com.foodRescue.fileprovider", file)
                 capturedImageUri = uri
                 cameraLauncher.launch(uri)
-            } catch (e: Exception) {
-                // Fail silently or show error
-            }
+            } catch (e: Exception) {}
         }, modifier = Modifier.fillMaxWidth().height(56.dp)) {
             Text(if (capturedImageUri == null) "Take Photo" else "Retake Photo")
         }
