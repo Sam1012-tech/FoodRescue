@@ -38,28 +38,14 @@ def trigger_matching(donation_id: str, background_tasks: BackgroundTasks):
     background_tasks.add_task(matching_agent.match_donation, donation_id)
     return {"message": "Matching process started in background", "donation_id": donation_id}
 
+from .services.prediction_service import PredictionService
+
 @app.get("/dashboard/predictions")
 def get_predictions():
     """
     Tier 2: Predicted Surplus Panel (AI Intelligence Layer)
     """
-    # Placeholder for the Prediction Agent output
-    return [
-        {
-            "location": "Manyata Tech Park",
-            "probability": "78%",
-            "estimated_meals": "40-60",
-            "time": "8:30 PM",
-            "trend": "rising"
-        },
-        {
-            "location": "Wedding Hall XYZ",
-            "probability": "82%",
-            "estimated_meals": "100-150",
-            "time": "10:00 PM",
-            "trend": "stable"
-        }
-    ]
+    return PredictionService.get_forecasts()
 
 @app.post("/system/maintenance/check-escalations")
 def run_escalations():
@@ -76,3 +62,18 @@ def get_decision_logs():
     """
     logs = db.collection('decision_logs').order_by('timestamp', direction='DESCENDING').limit(10).stream()
     return [log.to_dict() for log in logs]
+
+@app.get("/ngos")
+def get_ngos():
+    ngos = db.collection('ngos').where('is_active', '==', True).stream()
+    return [{"id": n.id, **n.to_dict()} for n in ngos]
+
+@app.get("/volunteers")
+def get_volunteers():
+    volunteers = db.collection('volunteers').where('is_active', '==', True).stream()
+    return [{"id": v.id, **v.to_dict()} for v in volunteers]
+
+@app.get("/donations")
+def get_donations():
+    donations = db.collection('donations').where('status', 'in', ['pending', 'matched']).stream()
+    return [{"id": d.id, **d.to_dict()} for d in donations]

@@ -33,3 +33,18 @@ export const runEscalations = async () => {
   const response = await api.post('/system/maintenance/check-escalations');
   return response.data;
 };
+
+export const getNGOs = async () => {
+  const response = await api.get('/ngos');
+  return response.data;
+};
+
+export const getVolunteers = async () => {
+  const response = await api.get('/volunteers');
+  return response.data;
+};
+
+export const getDonations = async () => {
+  const response = await api.get('/donations');
+  return response.data;
+};
