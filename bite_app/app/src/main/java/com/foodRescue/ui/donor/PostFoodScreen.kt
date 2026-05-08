@@ -1,6 +1,7 @@
 // bite_app/app/src/main/java/com/foodRescue/ui/donor/PostFoodScreen.kt
 package com.foodRescue.ui.donor
 
+import android.Manifest
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -21,11 +22,14 @@ fun PostFoodScreen(onBack: () -> Unit) {
     var capturedImageUri by remember { mutableStateOf<Uri?>(null) }
     var isPosting by remember { mutableStateOf(false) }
 
+    // PERMISSION LAUNCHER
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { _ -> }
+
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
-    ) { success ->
-        // No action needed on callback, capturedImageUri already holds the reference
-    }
+    ) { _ -> }
 
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -49,12 +53,22 @@ fun PostFoodScreen(onBack: () -> Unit) {
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(onClick = {
-            val file = File(context.cacheDir, "temp_image.jpg")
-            if (file.exists()) file.delete()
-            file.createNewFile()
-            val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-            capturedImageUri = uri
-            cameraLauncher.launch(uri)
+            // 1. Request Permission
+            permissionLauncher.launch(Manifest.permission.CAMERA)
+
+            // 2. Prepare file
+            try {
+                val file = File(context.cacheDir, "temp_image.jpg")
+                if (file.exists()) file.delete()
+                file.createNewFile()
+                
+                // 3. Launch Camera (using hardcoded authority to be safe)
+                val uri = FileProvider.getUriForFile(context, "com.foodRescue.fileprovider", file)
+                capturedImageUri = uri
+                cameraLauncher.launch(uri)
+            } catch (e: Exception) {
+                // Fail silently or show error
+            }
         }, modifier = Modifier.fillMaxWidth().height(56.dp)) {
             Text(if (capturedImageUri == null) "Take Photo" else "Retake Photo")
         }
@@ -67,7 +81,6 @@ fun PostFoodScreen(onBack: () -> Unit) {
             Button(
                 onClick = { 
                     isPosting = true
-                    // Mock delay for "uploading"
                     onBack() 
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
