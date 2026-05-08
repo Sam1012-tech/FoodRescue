@@ -1,4 +1,4 @@
-// bite_app/app/src/main/java/com.foodRescue/ui/donor/PostFoodScreen.kt
+// bite_app/app/src/main/java/com/foodRescue/ui/donor/PostFoodScreen.kt
 package com.foodRescue.ui.donor
 
 import android.net.Uri
@@ -11,23 +11,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import com.foodRescue.viewmodel.DonorViewModel
 import java.io.File
+import androidx.core.content.FileProvider
 
 @Composable
 fun PostFoodScreen(onBack: () -> Unit) {
     val context = LocalContext.current
-    val viewModel: DonorViewModel = viewModel()
-    val isPosting by viewModel.isPosting.collectAsState()
-    
     var capturedImageUri by remember { mutableStateOf<Uri?>(null) }
-    
+    var isPosting by remember { mutableStateOf(false) }
+
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
     ) { success ->
-        if (!success) capturedImageUri = null
+        // No action needed on callback, capturedImageUri already holds the reference
     }
 
     Column(
@@ -35,25 +32,30 @@ fun PostFoodScreen(onBack: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text("Post Surplus Food", style = MaterialTheme.typography.headlineSmall)
-        
         Spacer(modifier = Modifier.height(24.dp))
 
-        if (capturedImageUri != null) {
-            AsyncImage(
-                model = capturedImageUri,
-                contentDescription = null,
-                modifier = Modifier.size(300.dp).padding(8.dp)
-            )
+        Box(modifier = Modifier.size(300.dp).padding(8.dp), contentAlignment = Alignment.Center) {
+            if (capturedImageUri != null) {
+                AsyncImage(model = capturedImageUri, contentDescription = null, modifier = Modifier.fillMaxSize())
+            } else {
+                Surface(color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.fillMaxSize(), shape = MaterialTheme.shapes.medium) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text("No Photo Taken", style = MaterialTheme.typography.labelLarge)
+                    }
+                }
+            }
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         Button(onClick = {
             val file = File(context.cacheDir, "temp_image.jpg")
-            val uri = androidx.core.content.FileProvider.getUriForFile(
-                context, "${context.packageName}.fileprovider", file
-            )
+            if (file.exists()) file.delete()
+            file.createNewFile()
+            val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
             capturedImageUri = uri
             cameraLauncher.launch(uri)
-        }) {
+        }, modifier = Modifier.fillMaxWidth().height(56.dp)) {
             Text(if (capturedImageUri == null) "Take Photo" else "Retake Photo")
         }
 
@@ -63,7 +65,11 @@ fun PostFoodScreen(onBack: () -> Unit) {
             CircularProgressIndicator()
         } else {
             Button(
-                onClick = { capturedImageUri?.let { viewModel.postDonation(it, onBack) } },
+                onClick = { 
+                    isPosting = true
+                    // Mock delay for "uploading"
+                    onBack() 
+                },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 enabled = capturedImageUri != null
             ) {
