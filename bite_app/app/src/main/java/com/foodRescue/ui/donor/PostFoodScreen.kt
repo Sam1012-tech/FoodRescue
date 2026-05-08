@@ -1,5 +1,5 @@
-// bite_app/app/src/main/java/com/annasetu/ui/donor/PostFoodScreen.kt
-package com.annasetu.ui.donor
+// bite_app/app/src/main/java/com.foodRescue/ui/donor/PostFoodScreen.kt
+package com.foodRescue.ui.donor
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -13,7 +13,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import com.annasetu.viewmodel.DonorViewModel
+import com.foodRescue.viewmodel.DonorViewModel
 import java.io.File
 
 @Composable

@@ -1,5 +1,5 @@
-// bite_app/app/src/main/java/com/annasetu/ui/auth/LoginScreen.kt
-package com.annasetu.ui.auth
+// bite_app/app/src/main/java/com.foodRescue/ui/auth/LoginScreen.kt
+package com.foodRescue.ui.auth
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*

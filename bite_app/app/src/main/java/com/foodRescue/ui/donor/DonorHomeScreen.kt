@@ -1,5 +1,5 @@
-// bite_app/app/src/main/java/com/annasetu/ui/donor/DonorHomeScreen.kt
-package com.annasetu.ui.donor
+// bite_app/app/src/main/java/com.foodRescue/ui/donor/DonorHomeScreen.kt
+package com.foodRescue.ui.donor
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -11,8 +11,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.annasetu.data.model.Donation
-import com.annasetu.viewmodel.DonorViewModel
+import com.foodRescue.data.model.Donation
+import com.foodRescue.viewmodel.DonorViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -1,5 +1,5 @@
-// bite_app/app/src/main/java/com/annasetu/MainActivity.kt
-package com.annasetu
+// bite_app/app/src/main/java/com.foodRescue/MainActivity.kt
+package com.foodRescue
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import com.annasetu.navigation.AppNavigation
+import com.foodRescue.navigation.AppNavigation
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

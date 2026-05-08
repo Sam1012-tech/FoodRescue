@@ -1,5 +1,5 @@
-// bite_app/app/src/main/java/com/annasetu/ui/ngo/NGOHomeScreen.kt
-package com.annasetu.ui.ngo
+// bite_app/app/src/main/java/com.foodRescue/ui/volunteer/VolunteerHomeScreen.kt
+package com.foodRescue.ui.volunteer
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -9,8 +9,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 
 @Composable
-fun NGOHomeScreen() {
+fun VolunteerHomeScreen() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("NGO Home Screen Stub")
+        Text("Volunteer Home Screen Stub")
     }
 }
