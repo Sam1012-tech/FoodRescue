@@ -1,16 +1,49 @@
-// bite_app/app/src/main/java/com.foodRescue/ui/ngo/NGOHomeScreen.kt
+// bite_app/app/src/main/java/com/foodRescue/ui/ngo/NGOHomeScreen.kt
 package com.foodRescue.ui.ngo
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NGOHomeScreen() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("NGO Home Screen Stub")
+    Scaffold(
+        topBar = { CenterAlignedTopAppBar(title = { Text("NGO Dashboard") }) }
+    ) { padding ->
+        LazyColumn(modifier = Modifier.padding(padding).fillMaxSize().padding(16.dp)) {
+            item {
+                Text("Available Surplus Nearby", style = MaterialTheme.typography.titleLarge)
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
+            item {
+                MatchCard("Google Cafeteria", "50 Meals - Paneer Curry", "0.8 km away")
+            }
+            item {
+                MatchCard("Manyata Event Hall", "120 Meals - Biryani", "2.1 km away")
+            }
+        }
+    }
+}
+
+@Composable
+fun MatchCard(source: String, food: String, distance: String) {
+    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(source, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+            Text(food, style = MaterialTheme.typography.titleMedium)
+            Text(distance, style = MaterialTheme.typography.bodySmall)
+            Spacer(modifier = Modifier.height(12.dp))
+            Row {
+                Button(onClick = {}, modifier = Modifier.weight(1f)) { Text("Accept") }
+                Spacer(modifier = Modifier.width(8.dp))
+                OutlinedButton(onClick = {}, modifier = Modifier.weight(1f)) { Text("Decline") }
+            }
+        }
     }
 }
