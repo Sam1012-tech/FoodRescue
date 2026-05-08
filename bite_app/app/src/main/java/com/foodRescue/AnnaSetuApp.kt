@@ -1,5 +1,5 @@
-// bite_app/app/src/main/java/com/annasetu/AnnaSetuApp.kt
-package com.annasetu
+// bite_app/app/src/main/java/com.foodRescue/AnnaSetuApp.kt
+package com.foodRescue
 
 import android.app.Application
 import com.google.firebase.FirebaseApp

@@ -1,20 +1,21 @@
 {
   "project_info": {
-    "project_number": "000000000000",
-    "project_id": "annasetu-placeholder",
-    "storage_bucket": "annasetu-placeholder.appspot.com"
+    "project_number": "642445473435",
+    "project_id": "foodrescue-34370",
+    "storage_bucket": "foodrescue-34370.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:000000000000:android:000000000000",
+        "mobilesdk_app_id": "1:642445473435:android:dd96a1410292e24d89783e",
         "android_client_info": {
-          "package_name": "com.annasetu"
+          "package_name": "com.foodRescue"
         }
       },
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "placeholder_api_key"
+          "current_key": "AIzaSyB9wWrq0lTFm-pRN106t_Dp-FRzAP9pDb8"
         }
       ],
       "services": {

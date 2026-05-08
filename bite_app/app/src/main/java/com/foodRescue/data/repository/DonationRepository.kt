@@ -1,8 +1,8 @@
-// bite_app/app/src/main/java/com/annasetu/data/repository/DonationRepository.kt
-package com.annasetu.data.repository
+// bite_app/app/src/main/java/com.foodRescue/data/repository/DonationRepository.kt
+package com.foodRescue.data.repository
 
 import android.net.Uri
-import com.annasetu.data.model.Donation
+import com.foodRescue.data.model.Donation
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await

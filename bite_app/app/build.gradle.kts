@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.annasetu"
+    namespace = "com.foodRescue"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.annasetu"
+        applicationId = "com.foodRescue"
         minSdk = 24
         targetSdk = 34
         versionCode = 1

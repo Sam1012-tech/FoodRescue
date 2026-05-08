@@ -1,11 +1,11 @@
-// bite_app/app/src/main/java/com/annasetu/viewmodel/DonorViewModel.kt
-package com.annasetu.viewmodel
+// bite_app/app/src/main/java/com.foodRescue/viewmodel/DonorViewModel.kt
+package com.foodRescue.viewmodel
 
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.annasetu.data.model.Donation
-import com.annasetu.data.repository.DonationRepository
+import com.foodRescue.data.model.Donation
+import com.foodRescue.data.repository.DonationRepository
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow

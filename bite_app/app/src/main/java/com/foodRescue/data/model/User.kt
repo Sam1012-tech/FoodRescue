@@ -1,5 +1,5 @@
-// bite_app/app/src/main/java/com/annasetu/data/model/User.kt
-package com.annasetu.data.model
+// bite_app/app/src/main/java/com.foodRescue/data/model/User.kt
+package com.foodRescue.data.model
 
 import com.google.firebase.firestore.GeoPoint
 
