@@ -179,3 +179,19 @@
     line-height: 1.5;
   }
 }
+
+/* ─── Print media query — used by CSR Report PDF generator ─────────────────── */
+@media print {
+  /* Hide everything except the printable report */
+  body > * {
+    display: none !important;
+  }
+  #csr-report-printable {
+    display: block !important;
+  }
+  @page {
+    margin: 20mm;
+    size: A4 portrait;
+  }
+}
+

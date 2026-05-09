@@ -1,0 +1,92 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── Helper functions ──────────────────────────────────────────────────
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function hasRole(role) {
+      return isAuthenticated()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
+    }
+
+    // ─── donations ─────────────────────────────────────────────────────────
+    match /donations/{donationId} {
+
+      // Any authenticated user can READ donations (NGO browsing feed, volunteer, admin)
+      allow read: if isAuthenticated();
+
+      // Only authenticated donors can CREATE a donation for themselves
+      allow create: if isAuthenticated()
+        && request.resource.data.donorId == request.auth.uid
+        && request.resource.data.status == "posted"
+        && request.resource.data.photoUrl is string
+        && request.resource.data.photoUrl.size() > 0;
+
+      // Donor can update their own donation metadata
+      // NGOs can update status (accept rescue → "matched")
+      // Backend Cloud Function service account bypasses client rules entirely
+      allow update: if isAuthenticated() && (
+        isOwner(resource.data.donorId) ||
+        // NGO accepting: can only flip status, not alter donorId/photoUrl
+        (request.resource.data.donorId == resource.data.donorId &&
+         request.resource.data.photoUrl == resource.data.photoUrl)
+      );
+
+      // Only admins can delete donations
+      allow delete: if hasRole("admin");
+    }
+
+    // ─── users ─────────────────────────────────────────────────────────────
+    match /users/{userId} {
+      // Users can read and update their own profile
+      allow read, write: if isOwner(userId);
+
+      // Admins can read all users
+      allow read: if hasRole("admin");
+    }
+
+    // ─── ngos ──────────────────────────────────────────────────────────────
+    match /ngos/{ngoId} {
+      // Anyone authenticated can read NGO list (for matching display)
+      allow read: if isAuthenticated();
+
+      // NGOs manage their own document; admins can write any
+      allow write: if isOwner(ngoId) || hasRole("admin");
+    }
+
+    // ─── missions ──────────────────────────────────────────────────────────
+    match /missions/{missionId} {
+      // Any authenticated user can read missions (volunteer sees their task)
+      allow read: if isAuthenticated();
+
+      // Volunteer can update status of missions assigned to them
+      // (picked_up → delivered). Cannot change volunteer_id or donation_id.
+      allow update: if isAuthenticated()
+        && resource.data.volunteer_id == request.auth.uid
+        && request.resource.data.volunteer_id == resource.data.volunteer_id
+        && request.resource.data.donation_id  == resource.data.donation_id;
+
+      // Backend service account creates missions; no client creates allowed
+      allow create, delete: if hasRole("admin");
+    }
+
+    // ─── volunteers (legacy collection used by backend) ────────────────────
+    match /volunteers/{volunteerId} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(volunteerId) || hasRole("admin");
+    }
+
+    // ─── Catch-all: deny everything else ──────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
