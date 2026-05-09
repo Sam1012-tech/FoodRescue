@@ -13,6 +13,8 @@ import com.google.firebase.firestore.GeoPoint
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 
 private const val TAG = "DonorViewModel"
 
@@ -26,79 +28,100 @@ class DonorViewModel : ViewModel() {
     private val _isPosting = MutableStateFlow(false)
     val isPosting = _isPosting.asStateFlow()
 
-    /** Non-null means an error occurred — show a snackbar / toast with this message. */
     private val _uploadError = MutableStateFlow<String?>(null)
     val uploadError = _uploadError.asStateFlow()
 
+    private val _authStatus = MutableStateFlow("Initializing...")
+    val authStatus = _authStatus.asStateFlow()
+
     fun clearError() { _uploadError.value = null }
+
+    fun initiateDonationFailed(msg: String) {
+        _uploadError.value = msg
+    }
 
     fun fetchDonations() {
         viewModelScope.launch {
-            val uid = auth.currentUser?.uid
-            if (uid == null) {
-                Log.w(TAG, "fetchDonations: no authenticated user — skipping")
-                return@launch
-            }
-            Log.d(TAG, "fetchDonations: loading donations for uid=$uid")
+            val uid = auth.currentUser?.uid ?: return@launch
             _donations.value = repository.getDonorDonations(uid)
-            Log.d(TAG, "fetchDonations: loaded ${_donations.value.size} donations")
         }
     }
 
     /**
-     * Uploads [imageUri] to Firebase Storage, then writes a donation doc to Firestore.
-     *
-     * Storage upload is AWAITED before the Firestore write — photoUrl will never be empty.
-     *
-     * [metadata]    — collected from the "Post Food" form
-     * [location]    — device GPS location (should be passed from screen)
-     * [onComplete]  — called only on success
+     * Step 1: Upload photo and create doc with status="analyzing"
+     * Returns the doc ID so we can listen to it.
      */
-    fun postDonation(
-        imageUri: Uri,
-        metadata: DonorMetadata = DonorMetadata(),
-        location: GeoPoint? = null,
-        onComplete: () -> Unit
-    ) {
-        val uid = auth.currentUser?.uid
-        if (uid == null) {
-            Log.e(TAG, "postDonation: user is not authenticated — aborting")
-            _uploadError.value = "You must be logged in to post a donation."
-            return
-        }
+    suspend fun initiateDonation(imageUri: Uri, location: GeoPoint? = null): String? {
+        _isPosting.value = true
+        _uploadError.value = null
+        _authStatus.value = "Verifying session..."
+        
+        return try {
+            // Force await sign-in if needed
+            var user = auth.currentUser
+            if (user == null) {
+                _authStatus.value = "Signing in anonymously..."
+                user = auth.signInAnonymously().await().user
+            }
+            
+            val uid = user?.uid ?: throw Exception("Auth failed: No UID returned.")
+            _authStatus.value = "Authenticated: $uid"
 
+            Log.d(TAG, "initiateDonation: Uploading image as $uid...")
+            _uploadError.value = null // Clear any old errors
+            
+            _authStatus.value = "Uploading image..."
+            val imageUrl = repository.uploadImage(imageUri)
+            
+            Log.d(TAG, "initiateDonation: Image uploaded. URL: ${imageUrl.take(50)}...")
+            
+            val donation = Donation(
+                donorId = uid,
+                donorName = "Donor", // Simplified for demo
+                photoUrl = imageUrl,
+                pickupLocation = location,
+                status = "analyzing"
+            )
+            
+            _authStatus.value = "Creating donation record..."
+            val docId = repository.createDonation(donation)
+            Log.d(TAG, "initiateDonation: ✅ Created doc $docId")
+            _authStatus.value = "Donation created. Analyzing..."
+            docId
+        } catch (e: Exception) {
+            Log.e(TAG, "initiateDonation failed", e)
+            _uploadError.value = "Error: ${e.message}"
+            _authStatus.value = "Failed"
+            null
+        } finally {
+            _isPosting.value = false
+        }
+    }
+
+
+
+    /**
+     * Step 2: Listen for AI analysis updates on a specific donation doc
+     */
+    fun listenToDonation(docId: String): Flow<Donation?> {
+        return repository.listenToDonation(docId)
+    }
+
+    /**
+     * Step 3: Finalize donation with user-entered metadata
+     */
+    fun finalizeDonation(docId: String, metadata: DonorMetadata, onComplete: () -> Unit) {
         viewModelScope.launch {
             _isPosting.value = true
-            _uploadError.value = null
             try {
-                // Step 1: Upload photo to Firebase Storage
-                Log.d(TAG, "postDonation: Step 1 — uploading image to Storage…")
-                val imageUrl = repository.uploadImage(imageUri)
-                Log.d(TAG, "postDonation: Step 1 ✅ — imageUrl=$imageUrl")
-
-                // Step 2: Build donation document
-                val donation = Donation(
-                    donorId       = uid,
-                    donorName     = auth.currentUser?.displayName ?: "Donor",
-                    photoUrl      = imageUrl,          // always the Storage download URL
-                    pickupLocation = location,         // GeoPoint from device GPS
-                    status        = "posted",
-                    donorMetadata = metadata
-                )
-                Log.d(TAG, "postDonation: Step 2 — writing Firestore doc, donorId=$uid, status=posted")
-
-                // Step 3: Write to Firestore
-                repository.createDonation(donation)
-                Log.d(TAG, "postDonation: Step 3 ✅ — Firestore write successful!")
-
+                repository.updateDonationMetadata(docId, metadata)
                 onComplete()
             } catch (e: Exception) {
-                // Bug C fix: errors are no longer silently discarded
-                Log.e(TAG, "postDonation: ❌ FAILED — ${e.javaClass.simpleName}: ${e.message}", e)
-                _uploadError.value = "Upload failed: ${e.message}"
+                _uploadError.value = "Finalize failed: ${e.message}"
             } finally {
                 _isPosting.value = false
             }
         }
     }
 }
+

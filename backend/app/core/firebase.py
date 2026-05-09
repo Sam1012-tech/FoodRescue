@@ -4,34 +4,58 @@ import os
 from dotenv import load_dotenv
 from pathlib import Path
 
-# Smart .env loading: Look in current dir and parent dir (root)
-env_path = Path('.') / '.env'
-if not env_path.exists():
-    env_path = Path('..') / '.env'
-load_dotenv(dotenv_path=env_path)
+# ── Load .env from project root (works whether you run from /backend or /) ──
+_here = Path(__file__).resolve().parent          # .../backend/app/core
+_backend_root = _here.parent.parent             # .../backend
+_project_root = _backend_root.parent            # .../FoodRescue-
+
+for _env_file in [_backend_root / ".env", _project_root / ".env"]:
+    if _env_file.exists():
+        load_dotenv(dotenv_path=_env_file)
+        break
 
 def init_firestore():
-    # Smart Key Discovery: Check environment variable, then common local paths
-    cert_path = os.getenv("FIREBASE_SERVICE_ACCOUNT_PATH", "backend/serviceAccountKey.json")
-    
-    # If the default path fails, try looking in the current directory (case where user is already in /backend)
-    search_paths = [cert_path, "serviceAccountKey.json", "../serviceAccountKey.json"]
-    
+    # 1. Check env variable first (CI / production override)
+    env_path = os.getenv("FIREBASE_SERVICE_ACCOUNT_PATH")
+
+    # 2. Search well-known local paths (relative to this file's location)
+    candidates = [
+        Path(env_path) if env_path else None,
+        _backend_root / "serviceAccountKey.json",
+        _project_root / "serviceAccountKey.json",
+        _project_root / "backend" / "serviceAccountKey.json",
+    ]
+
     final_path = None
-    for path in search_paths:
-        if os.path.exists(path):
-            final_path = path
+    for p in candidates:
+        if p and p.exists():
+            final_path = p
             break
 
     if not firebase_admin._apps:
         if final_path:
-            print(f"✅ Firebase initialized using: {final_path}")
-            cred = credentials.Certificate(final_path)
+            print(f"✅ Firebase: using service account at {final_path}")
+            cred = credentials.Certificate(str(final_path))
             firebase_admin.initialize_app(cred)
         else:
-            print("⚠️ Warning: Firebase Service Account key not found. Using default credentials.")
-            firebase_admin.initialize_app()
-            
+            raise RuntimeError(
+                "\n\n"
+                "❌ Firebase service account key NOT FOUND.\n"
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                "Fix in 2 steps:\n\n"
+                "  1. Download your key:\n"
+                "     → console.firebase.google.com\n"
+                "     → Project foodrescue-34370\n"
+                "     → Project Settings → Service Accounts\n"
+                "     → 'Generate new private key'\n\n"
+                "  2. Save the file as:\n"
+                "     FoodRescue-/backend/serviceAccountKey.json\n\n"
+                "  OR set the env variable:\n"
+                "     FIREBASE_SERVICE_ACCOUNT_PATH=/path/to/key.json\n"
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            )
+
     return firestore.client()
 
 db = init_firestore()
+

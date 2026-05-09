@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.foodRescue.data.model.DonorMetadata
+import com.foodRescue.data.model.FoodAnalysis
 import com.foodRescue.ui.theme.*
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -34,6 +35,7 @@ import com.foodRescue.ui.theme.*
 fun DonationMetadataForm(
     photoUri: Uri?,
     isPosting: Boolean,
+    aiResults: FoodAnalysis? = null,
     onConfirm: (DonorMetadata) -> Unit,
     onCancel: () -> Unit
 ) {
@@ -47,7 +49,17 @@ fun DonationMetadataForm(
     var contactName   by remember { mutableStateOf("") }
     var contactPhone  by remember { mutableStateOf("") }
     var notes         by remember { mutableStateOf("") }
-    var showDetails   by remember { mutableStateOf(false) }
+    var showDetails   by remember { mutableStateOf(true) } // Auto-expand if we have AI results
+
+    // Pre-populate with AI results when they arrive
+    LaunchedEffect(aiResults) {
+        aiResults?.let {
+            portions = it.estimatedMeals
+            vegStatus = it.foodType
+            // Assuming weight calculation if needed, else stay default
+        }
+    }
+
 
     // Cream page background
     Box(
@@ -116,6 +128,11 @@ fun DonationMetadataForm(
                 ) {
                     Text("Food photo", style = WarmTypography.labelMedium, color = PaperWhite)
                 }
+            }
+
+            // ── AI Insight Card ────────────────────────────────────────────
+            if (aiResults != null) {
+                AIInsightCard(aiResults)
             }
 
             // ── Section: Required details ──────────────────────────────────
@@ -322,6 +339,48 @@ fun DonationMetadataForm(
 
             // Bottom safe-area breathing room
             Spacer(modifier = Modifier.navigationBarsPadding().height(24.dp))
+        }
+    }
+}
+
+@Composable
+private fun AIInsightCard(results: FoodAnalysis) {
+    Card(
+        modifier = Modifier
+            .padding(horizontal = 24.dp, vertical = 8.dp)
+            .fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = PaperWhite),
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("✨ Gemini AI Insights", style = WarmTypography.labelLarge, color = SageGreen)
+                Spacer(modifier = Modifier.weight(1f))
+                Text("${(results.confidence * 100).toInt()}% match", style = WarmTypography.labelSmall, color = InkLight)
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                AIStat("Portions", "${results.estimatedMeals}", SageGreen)
+                AIStat("Freshness", results.freshness.replaceFirstChar { it.uppercase() }, UrgencyMedium)
+                AIStat("Type", results.foodType.uppercase(), AmberYellow)
+            }
+        }
+    }
+}
+
+@Composable
+private fun AIStat(label: String, value: String, color: Color) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(label, style = WarmTypography.labelSmall, color = InkLight)
+        Spacer(modifier = Modifier.height(4.dp))
+        Box(
+            modifier = Modifier
+                .background(color.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
+                .padding(horizontal = 12.dp, vertical = 4.dp)
+        ) {
+            Text(value, style = WarmTypography.labelLarge, color = color)
         }
     }
 }

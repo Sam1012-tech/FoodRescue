@@ -24,9 +24,10 @@ service cloud.firestore {
       allow read: if isAuthenticated();
 
       // Only authenticated donors can CREATE a donation for themselves
+      // Allows both "posted" and "analyzing" status for initial creation
       allow create: if isAuthenticated()
         && request.resource.data.donorId == request.auth.uid
-        && request.resource.data.status == "posted"
+        && (request.resource.data.status == "posted" || request.resource.data.status == "analyzing")
         && request.resource.data.photoUrl is string
         && request.resource.data.photoUrl.size() > 0;
 
