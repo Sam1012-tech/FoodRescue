@@ -35,3 +35,4 @@ __pycache__/
 
 # Firebase/Secrets
 serviceAccountKey.json
+vision/

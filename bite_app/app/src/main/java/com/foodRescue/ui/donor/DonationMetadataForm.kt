@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.foodRescue.data.model.DonorMetadata
+import com.foodRescue.data.model.FoodAnalysis
 import com.foodRescue.ui.theme.*
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -34,6 +35,7 @@ import com.foodRescue.ui.theme.*
 fun DonationMetadataForm(
     photoUri: Uri?,
     isPosting: Boolean,
+    aiResults: FoodAnalysis? = null,
     onConfirm: (DonorMetadata) -> Unit,
     onCancel: () -> Unit
 ) {
@@ -47,7 +49,17 @@ fun DonationMetadataForm(
     var contactName   by remember { mutableStateOf("") }
     var contactPhone  by remember { mutableStateOf("") }
     var notes         by remember { mutableStateOf("") }
-    var showDetails   by remember { mutableStateOf(false) }
+    var showDetails   by remember { mutableStateOf(true) } // Auto-expand if we have AI results
+
+    // Pre-populate with AI results when they arrive
+    LaunchedEffect(aiResults) {
+        aiResults?.let {
+            portions = it.estimatedMeals
+            vegStatus = it.foodType
+            // Assuming weight calculation if needed, else stay default
+        }
+    }
+
 
     // Cream page background
     Box(
