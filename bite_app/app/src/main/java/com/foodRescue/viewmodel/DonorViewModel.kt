@@ -44,16 +44,20 @@ class DonorViewModel : ViewModel() {
      * Returns the doc ID so we can listen to it.
      */
     suspend fun initiateDonation(imageUri: Uri, location: GeoPoint? = null): String? {
-        val uid = auth.currentUser?.uid
-        if (uid == null) {
-            _uploadError.value = "You must be logged in to post a donation."
-            return null
-        }
-
         _isPosting.value = true
         _uploadError.value = null
+        
         return try {
-            Log.d(TAG, "initiateDonation: Uploading image...")
+            // Ensure we are signed in (await if necessary)
+            var user = auth.currentUser
+            if (user == null) {
+                Log.d(TAG, "initiateDonation: No user found, attempting anonymous sign-in…")
+                user = auth.signInAnonymously().await().user
+            }
+            
+            val uid = user?.uid ?: throw Exception("Authentication failed. Please check your internet connection and ensure Anonymous Auth is enabled in Firebase.")
+
+            Log.d(TAG, "initiateDonation: Uploading image as $uid...")
             val imageUrl = repository.uploadImage(imageUri)
             
             val donation = Donation(
@@ -65,7 +69,7 @@ class DonorViewModel : ViewModel() {
             )
             
             val docId = repository.createDonation(donation)
-            Log.d(TAG, "initiateDonation: Created doc $docId")
+            Log.d(TAG, "initiateDonation: Created doc $docId with status=analyzing")
             docId
         } catch (e: Exception) {
             Log.e(TAG, "initiateDonation failed", e)
@@ -75,6 +79,7 @@ class DonorViewModel : ViewModel() {
             _isPosting.value = false
         }
     }
+
 
     /**
      * Step 2: Listen for AI analysis updates on a specific donation doc
