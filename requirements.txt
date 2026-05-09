@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+firebase-admin
+googlemaps
+pandas
+scikit-learn
+pydantic
+python-dotenv
+python-multipart

@@ -70,7 +70,11 @@ dependencies {
     // Maps & Geo
     implementation("com.google.maps.android:maps-compose:4.3.3")
     implementation("com.google.android.gms:play-services-maps:18.2.0")
+    implementation("com.google.android.gms:play-services-location:21.2.0")
     implementation("com.firebase:geofire-android-common:3.2.0")
+
+    // Accompanist — runtime permissions in Compose
+    implementation("com.google.accompanist:accompanist-permissions:0.34.0")
 
     // Image Loading
     implementation("io.coil-kt:coil-compose:2.5.0")
