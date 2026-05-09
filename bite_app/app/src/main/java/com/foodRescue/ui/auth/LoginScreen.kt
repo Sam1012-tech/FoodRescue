@@ -17,8 +17,15 @@ import androidx.compose.ui.unit.sp
 import com.foodRescue.ui.shared.components.GlassCard
 import com.foodRescue.ui.theme.*
 
+import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.launch
+
 @Composable
 fun LoginScreen(onNavigateToHome: (String) -> Unit) {
+    val scope = rememberCoroutineScope()
+    var isAuthenticating by remember { mutableStateOf(false) }
+    var authError by remember { mutableStateOf<String?>(null) }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -42,7 +49,7 @@ fun LoginScreen(onNavigateToHome: (String) -> Unit) {
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                "RescueBite AI",
+                "AnnaSetu AI",
                 style = MaterialTheme.typography.headlineLarge.copy(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 2.sp,
@@ -50,27 +57,60 @@ fun LoginScreen(onNavigateToHome: (String) -> Unit) {
                 )
             )
             Text(
-                "Real-time Urban Food Infrastructure",
+                "Urban Food Infrastructure v2.0",
                 style = MaterialTheme.typography.bodySmall,
                 color = NeonGreen.copy(alpha = 0.8f)
             )
             
             Spacer(modifier = Modifier.height(64.dp))
 
-            GlassCard(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    "Select Your Infrastructure Role",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = Color.White.copy(alpha = 0.7f),
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
-                Spacer(modifier = Modifier.height(24.dp))
+            if (isAuthenticating) {
+                CircularProgressIndicator(color = NeonGreen)
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Verifying Digital Identity...", color = Color.White.copy(alpha = 0.7f))
+            } else {
+                GlassCard(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        "Select Infrastructure Role",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = Color.White.copy(alpha = 0.7f),
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
 
-                RoleButton("ORGANIZER", "Manage surplus & AI Analysis") { onNavigateToHome("donor") }
-                Spacer(modifier = Modifier.height(16.dp))
-                RoleButton("NGO ENTITY", "Live matching & logistics") { onNavigateToHome("ngo") }
-                Spacer(modifier = Modifier.height(16.dp))
-                RoleButton("RESCUE VOLUNTEER", "Mission execution & navigation") { onNavigateToHome("volunteer") }
+                    RoleButton("ORGANIZER", "Manage surplus & AI Analysis") {
+                        scope.launch {
+                            isAuthenticating = true
+                            try {
+                                FirebaseAuth.getInstance().signInAnonymously()
+                                onNavigateToHome("donor")
+                            } catch (e: Exception) {
+                                authError = e.message
+                            } finally {
+                                isAuthenticating = false
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    RoleButton("NGO ENTITY", "Live matching & logistics") {
+                        scope.launch {
+                            isAuthenticating = true
+                            try {
+                                FirebaseAuth.getInstance().signInAnonymously()
+                                onNavigateToHome("ngo")
+                            } catch (e: Exception) {
+                                authError = e.message
+                            } finally {
+                                isAuthenticating = false
+                            }
+                        }
+                    }
+                }
+                
+                authError?.let {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(it, color = WarningYellow, style = MaterialTheme.typography.labelSmall)
+                }
             }
         }
     }

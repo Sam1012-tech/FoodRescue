@@ -70,7 +70,10 @@ class DonorViewModel : ViewModel() {
             Log.d(TAG, "initiateDonation: Uploading image as $uid...")
             _uploadError.value = null // Clear any old errors
             
+            _authStatus.value = "Uploading image..."
             val imageUrl = repository.uploadImage(imageUri)
+            
+            Log.d(TAG, "initiateDonation: Image uploaded. URL: ${imageUrl.take(50)}...")
             
             val donation = Donation(
                 donorId = uid,
@@ -80,13 +83,15 @@ class DonorViewModel : ViewModel() {
                 status = "analyzing"
             )
             
+            _authStatus.value = "Creating donation record..."
             val docId = repository.createDonation(donation)
-            Log.d(TAG, "initiateDonation: Created doc $docId")
+            Log.d(TAG, "initiateDonation: ✅ Created doc $docId")
+            _authStatus.value = "Donation created. Analyzing..."
             docId
         } catch (e: Exception) {
             Log.e(TAG, "initiateDonation failed", e)
-            _uploadError.value = "Init failed: ${e.message}"
-            _authStatus.value = "Auth Failed"
+            _uploadError.value = "Error: ${e.message}"
+            _authStatus.value = "Failed"
             null
         } finally {
             _isPosting.value = false

@@ -44,8 +44,15 @@ class DonationRepository {
             "aiAnalysis" to donation.aiAnalysis,
             "safetyTier" to donation.safetyTier
         )
-        ref.set(docMap).await()
-        return ref.id
+        try {
+            Log.d(TAG, "createDonation: Writing to Firestore with donorId=${donation.donorId}, status=${donation.status}, photoUrl=${donation.photoUrl.take(50)}...")
+            ref.set(docMap).await()
+            Log.d(TAG, "createDonation: ✅ Successfully created doc ${ref.id}")
+            return ref.id
+        } catch (e: Exception) {
+            Log.e(TAG, "createDonation: ❌ FIRESTORE ERROR - ${e.message}", e)
+            throw Exception("Firestore write failed: ${e.message}", e)
+        }
     }
 
     /**
