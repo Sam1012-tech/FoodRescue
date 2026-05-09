@@ -50,15 +50,17 @@ fun PostFoodScreen(
     // Listen for AI analysis updates
     LaunchedEffect(currentDocId) {
         currentDocId?.let { id ->
-            donorViewModel.listenToDonation(id).collect { updated ->
-                if (updated != null) {
-                    aiAnalysisResult = updated
-                    // If AI has finished (estimatedMeals > 0 or status changed from analyzing)
-                    if (updated.aiAnalysis.estimatedMeals > 0 || updated.status != "analyzing") {
-                        screenState = "metadata"
+            donorViewModel.listenToDonation(id)
+                .catch { e -> donorViewModel.initiateDonationFailed(e.message ?: "Unknown error") }
+                .collect { updated ->
+                    if (updated != null) {
+                        aiAnalysisResult = updated
+                        // If AI has finished (estimatedMeals > 0 or status changed from analyzing)
+                        if (updated.aiAnalysis.estimatedMeals > 0 || updated.status != "analyzing") {
+                            screenState = "metadata"
+                        }
                     }
                 }
-            }
         }
     }
 
@@ -127,7 +129,8 @@ fun PostFoodScreen(
                         }
                     }
                     
-                    AnalyzingUI()
+                    val authStatus by donorViewModel.authStatus.collectAsState()
+                    AnalyzingUI(authStatus)
                 }
             }
         }
@@ -168,7 +171,7 @@ private fun OptionCard(modifier: Modifier, emoji: String, label: String, subLabe
 }
 
 @Composable
-fun AnalyzingUI() {
+fun AnalyzingUI(status: String = "") {
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -177,6 +180,7 @@ fun AnalyzingUI() {
         CircularProgressIndicator(color = NeonGreen, modifier = Modifier.size(64.dp))
         Spacer(modifier = Modifier.height(24.dp))
         Text("AI is analysing your food…", color = Color.White, fontWeight = FontWeight.Bold)
+        Text(status, color = NeonGreen, style = MaterialTheme.typography.labelSmall)
         Text("Identifying portions & safety tier", color = Color.White.copy(alpha = 0.5f), style = MaterialTheme.typography.labelSmall)
     }
 }

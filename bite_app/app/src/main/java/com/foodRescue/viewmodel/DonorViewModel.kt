@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 
 private const val TAG = "DonorViewModel"
 
@@ -30,7 +31,14 @@ class DonorViewModel : ViewModel() {
     private val _uploadError = MutableStateFlow<String?>(null)
     val uploadError = _uploadError.asStateFlow()
 
+    private val _authStatus = MutableStateFlow("Initializing...")
+    val authStatus = _authStatus.asStateFlow()
+
     fun clearError() { _uploadError.value = null }
+
+    fun initiateDonationFailed(msg: String) {
+        _uploadError.value = msg
+    }
 
     fun fetchDonations() {
         viewModelScope.launch {
@@ -46,39 +54,45 @@ class DonorViewModel : ViewModel() {
     suspend fun initiateDonation(imageUri: Uri, location: GeoPoint? = null): String? {
         _isPosting.value = true
         _uploadError.value = null
+        _authStatus.value = "Verifying session..."
         
         return try {
-            // Ensure we are signed in (await if necessary)
+            // Force await sign-in if needed
             var user = auth.currentUser
             if (user == null) {
-                Log.d(TAG, "initiateDonation: No user found, attempting anonymous sign-in…")
+                _authStatus.value = "Signing in anonymously..."
                 user = auth.signInAnonymously().await().user
             }
             
-            val uid = user?.uid ?: throw Exception("Authentication failed. Please check your internet connection and ensure Anonymous Auth is enabled in Firebase.")
+            val uid = user?.uid ?: throw Exception("Auth failed: No UID returned.")
+            _authStatus.value = "Authenticated: $uid"
 
             Log.d(TAG, "initiateDonation: Uploading image as $uid...")
+            _uploadError.value = null // Clear any old errors
+            
             val imageUrl = repository.uploadImage(imageUri)
             
             val donation = Donation(
                 donorId = uid,
-                donorName = auth.currentUser?.displayName ?: "Donor",
+                donorName = "Donor", // Simplified for demo
                 photoUrl = imageUrl,
                 pickupLocation = location,
                 status = "analyzing"
             )
             
             val docId = repository.createDonation(donation)
-            Log.d(TAG, "initiateDonation: Created doc $docId with status=analyzing")
+            Log.d(TAG, "initiateDonation: Created doc $docId")
             docId
         } catch (e: Exception) {
             Log.e(TAG, "initiateDonation failed", e)
-            _uploadError.value = "Upload failed: ${e.message}"
+            _uploadError.value = "Init failed: ${e.message}"
+            _authStatus.value = "Auth Failed"
             null
         } finally {
             _isPosting.value = false
         }
     }
+
 
 
     /**
